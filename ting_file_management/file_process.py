@@ -1,11 +1,13 @@
+import os
 from ting_file_management.file_management import txt_importer
 from ting_file_management.queue import Queue
-import os
+
 
 def process(path_file: str, instance: Queue):
     # Verificar se o arquivo já foi processado anteriormente
     file_name = os.path.basename(path_file)
     if instance.is_processed(file_name):
+        print(f"Arquivo {file_name} já foi processado anteriormente")
         return
 
     # Ler as linhas do arquivo usando txt_importer
@@ -28,15 +30,20 @@ def process(path_file: str, instance: Queue):
     # Mostrar os dados processados via stdout
     print(processed_data)
 
+
 def remove(instance: Queue):
-    if len(instance) > 0:
-        file_name = instance.dequeue()["nome_do_arquivo"]
-        print(f"Arquivo {file_name} removido com sucesso")
-    else:
+    try:
+        file_info = instance.dequeue()
+        print(f"Arquivo {file_info['nome_do_arquivo']} removido com sucesso")
+    except IndexError:
         print("Não há elementos para remover")
+    except TypeError:
+        print("Não há elementos para remover")
+
 
 def file_metadata(instance: Queue, position):
     try:
-        print(instance.search(position))
+        file_info = instance.search(position)
+        print(file_info)
     except IndexError:
         print("Posição inválida")
