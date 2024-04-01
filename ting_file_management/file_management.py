@@ -27,7 +27,6 @@ def process(file_path: str, project: Queue) -> None:
     # Importar o conteúdo do arquivo
     lines = txt_importer(file_path)
 
-    # Se o conteúdo do arquivo for None, significa que houve um erro na importação
     if lines is None:
         return
 
