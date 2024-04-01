@@ -1,49 +1,65 @@
-import os
-from ting_file_management.file_management import txt_importer
+import sys
+from typing import Union
 from ting_file_management.queue import Queue
 
 
-def process(path_file: str, instance: Queue):
+def process(file_path: str, project: Queue) -> None:
     # Verificar se o arquivo já foi processado anteriormente
-    file_name = os.path.basename(path_file)
-    if instance.is_processed(file_name):
-        print(f"Arquivo {file_name} já foi processado anteriormente")
-        return
+    for item in project.items:
+        if item["nome_do_arquivo"] == file_path:
+            print(f"Arquivo {file_path} já processado anteriormente. Ignorando.")
+            return
 
-    # Ler as linhas do arquivo usando txt_importer
-    lines = txt_importer(path_file)
+    # Definição da função txt_importer localmente
+    def txt_importer(file_path: str) -> Union[list, None]:
+        import sys
 
-    # Verificar se as linhas foram lidas com sucesso
+        if not file_path.endswith('.txt'):
+            sys.stderr.write("Formato inválido\n")
+            return None
+
+        try:
+            with open(file_path, 'r') as file:
+                lines = file.read().split('\n')
+                return lines
+        except FileNotFoundError:
+            sys.stderr.write(f"Arquivo {file_path} não encontrado\n")
+            return None
+
+    # Importar o conteúdo do arquivo usando a função txt_importer local
+    lines = txt_importer(file_path)
+
+    # Se o conteúdo do arquivo for None, significa que houve um erro na importação
     if lines is None:
         return
 
-    # Construir o dicionário com os dados processados
-    processed_data = {
-        "nome_do_arquivo": path_file,
+    # Criar o dicionário com as informações do arquivo
+    file_info = {
+        "nome_do_arquivo": file_path,
         "qtd_linhas": len(lines),
         "linhas_do_arquivo": lines
     }
 
-    # Adicionar o arquivo à fila
-    instance.enqueue(processed_data)
+    # Adicionar o dicionário à fila
+    project.enqueue(file_info)
 
-    # Mostrar os dados processados via stdout
-    print(processed_data)
+    # Exibir os dados processados
+    print("Dados processados:")
+    print(file_info)
+
+def remove(project: Queue) -> None:
+    if len(project) == 0:
+        print("Não há elementos")
+        return
+
+    removed_file = project.dequeue()
+    print(f"Arquivo {removed_file['nome_do_arquivo']} removido com sucesso")
 
 
-def remove(instance: Queue):
+def file_metadata(project: Queue, index: int) -> None:
     try:
-        file_info = instance.dequeue()
-        print(f"Arquivo {file_info['nome_do_arquivo']} removido com sucesso")
-    except IndexError:
-        print("Não há elementos para remover")
-    except TypeError:
-        print("Não há elementos para remover")
-
-
-def file_metadata(instance: Queue, position):
-    try:
-        file_info = instance.search(position)
+        file_info = project.search(index)
+        print("Informações do arquivo:")
         print(file_info)
     except IndexError:
-        print("Posição inválida")
+        sys.stderr.write("Posição inválida\n")
